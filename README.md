@@ -1,6 +1,27 @@
 # fastfooddb
 
-> Blazingly fast API to get macros by bar code/food name.
+> Blazingly fast API to get nutritional macros by barcode and food name.
+
+## Motivation & Architecture
+
+This project was built to solve two specific, narrow use cases:
+1. **Barcode Lookup:** Fetching food nutritional data instantly by scanning a product's barcode.
+2. **Fast Search:** Providing an extremely fast, responsive search by food name for UI typeaheads.
+
+To achieve this without relying on heavy external database services or hitting upstream APIs at runtime, we built a custom **importer for the OpenFoodFacts database**. The importer processes the massive OpenFoodFacts dump offline, extracts only the essential macros (calories, protein, fat, carbohydrates), and packs them into two embedded engines:
+- **[Pebble](https://github.com/cockroachdb/pebble):** A fast embedded key-value store used to serve food payloads by their exact barcode instantly. The data is compressed in a highly optimized custom binary layout.
+- **[Bleve](https://github.com/blevesearch/bleve):** A text indexing library used to provide flexible, fuzzy, lightning-fast full-text searches across product names.
+
+Because of the aggressive filtering and binary packing, the **entire database size is reduced to around 1GB**. This allows the server to run locally with minimal RAM, relying heavily on the OS page cache for sub-millisecond data retrieval.
+
+## Performance Metrics
+
+Based on recent benchmarks, the local data serving delivers the following latency:
+
+| Endpoint | p50 | p95 | p99 |
+|----------|-----|-----|-----|
+| **Barcode Lookup** | < 1ms | < 1ms | < 1ms |
+| **Search (Name)** | 30ms | 100ms | 100ms |
 
 ## Quick Start
 
