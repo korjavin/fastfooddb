@@ -1,0 +1,79 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/korjavin/fastfooddb:latest
+            ghcr.io/korjavin/fastfooddb:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update deploy branch
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+          IMAGE="ghcr.io/korjavin/fastfooddb:${{ github.sha }}"
+
+          if git ls-remote --exit-code --heads origin deploy >/dev/null 2>&1; then
+            git fetch origin deploy
+            git checkout deploy
+          else
+            git checkout --orphan deploy
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          cat > docker-compose.yml <<EOF
+          version: "3.8"
+          services:
+            app:
+              image: ${IMAGE}
+              restart: unless-stopped
+              ports:
+                - "8080:8080"
+              env_file:
+                - .env
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.fastfooddb.rule=Host(\${DOMAIN})"
+                - "traefik.http.routers.fastfooddb.tls=true"
+                - "traefik.http.routers.fastfooddb.tls.certresolver=letsencrypt"
+                - "traefik.http.services.fastfooddb.loadbalancer.server.port=8080"
+          EOF
+
+          git add docker-compose.yml
+          git diff --cached --quiet || git commit -m "deploy: ${{ github.sha }}"
+          git push origin deploy
+
+      - name: Trigger Portainer webhook
+        if: ${{ secrets.PORTAINER_WEBHOOK != '' }}
+        run: curl -s -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
