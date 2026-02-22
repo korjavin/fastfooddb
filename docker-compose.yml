@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   app:
-    image: ghcr.io/korjavin/fastfooddb:905b0a8850f69ddd3fa4e2157f385946921646d7
+    image: ghcr.io/korjavin/fastfooddb:519b69153ce43729fd6db6401bd6b9d6ff9dc5be
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -17,7 +17,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.fastfooddb.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.fastfooddb.tls=true"
-      - "traefik.http.routers.fastfooddb.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fastfooddb.tls.certresolver=myresolver"
       - "traefik.http.services.fastfooddb.loadbalancer.server.port=8080"
 
 networks:
