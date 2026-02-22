@@ -17,7 +17,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.fastfooddb.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.fastfooddb.tls=true"
-      - "traefik.http.routers.fastfooddb.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fastfooddb.tls.certresolver=myresolver"
       - "traefik.http.services.fastfooddb.loadbalancer.server.port=8080"
 
 networks:
