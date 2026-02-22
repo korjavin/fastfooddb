@@ -88,5 +88,7 @@ jobs:
           git push origin deploy
 
       - name: Trigger Portainer webhook
-        if: ${{ secrets.PORTAINER_WEBHOOK != '' }}
-        run: curl -s -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
+        env:
+          PORTAINER_WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK }}
+        if: env.PORTAINER_WEBHOOK != ''
+        run: curl -s -X POST "$PORTAINER_WEBHOOK"
