@@ -1,19 +1,21 @@
 version: "3.8"
+
 services:
   app:
-    image: ghcr.io/korjavin/fastfooddb:b1cd4d54aa7a08c71948ae43bb5836f33f1011fc
+    image: ghcr.io/korjavin/fastfooddb:905b0a8850f69ddd3fa4e2157f385946921646d7
     restart: unless-stopped
     ports:
       - "8080:8080"
-    env_file:
-      - .env
+    environment:
+      - DATA_DIR=${DATA_DIR:-/app/data}
+      - API_KEYS=${API_KEYS}
     volumes:
       - ./data:/app/data
     networks:
       - traefik_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.fastfooddb.rule=Host(${DOMAIN})"
+      - "traefik.http.routers.fastfooddb.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.fastfooddb.tls=true"
       - "traefik.http.routers.fastfooddb.tls.certresolver=letsencrypt"
       - "traefik.http.services.fastfooddb.loadbalancer.server.port=8080"
