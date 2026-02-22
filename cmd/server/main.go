@@ -11,6 +11,7 @@ import (
 
 	"github.com/korjavin/fastfooddb/internal/api"
 	"github.com/korjavin/fastfooddb/internal/auth"
+	"github.com/korjavin/fastfooddb/internal/metrics"
 	"github.com/korjavin/fastfooddb/internal/middleware"
 	"github.com/korjavin/fastfooddb/internal/store"
 )
@@ -60,8 +61,9 @@ func main() {
 		)
 	}
 
+	reg := metrics.NewRegistry()
 	mux := http.NewServeMux()
-	api.RegisterRoutes(mux, apiKeys, s, manifest)
+	api.RegisterRoutes(mux, apiKeys, s, manifest, reg)
 
 	// Middleware chain (outer to inner): Logging → CORS → RateLimit → mux
 	handler := middleware.Chain(

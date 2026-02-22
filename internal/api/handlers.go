@@ -6,14 +6,18 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/korjavin/fastfooddb/internal/metrics"
 	"github.com/korjavin/fastfooddb/internal/store"
 )
 
 // Handler holds dependencies for HTTP handlers.
 type Handler struct {
-	Store    *store.Store
-	Manifest *store.Manifest
+	Store       *store.Store
+	Manifest    *store.Manifest
+	BarcodeHist *metrics.Histogram // nil-safe
+	SearchHist  *metrics.Histogram // nil-safe
 }
 
 // productResponse is the JSON shape returned for a single product.
@@ -60,7 +64,11 @@ func (h *Handler) FoodByBarcode(w http.ResponseWriter, r *http.Request) {
 	barcode := r.PathValue("barcode")
 	slog.Info("food by barcode request", "barcode", barcode)
 
+	t0 := time.Now()
 	p, found, err := h.Store.Get(barcode)
+	if h.BarcodeHist != nil {
+		h.BarcodeHist.Observe(time.Since(t0))
+	}
 	if err != nil {
 		slog.Error("barcode lookup failed", "barcode", barcode, "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -93,7 +101,11 @@ func (h *Handler) FoodSearch(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("food search request", "query", q, "limit", limit)
 
+	t0 := time.Now()
 	products, err := h.Store.Search(q, limit)
+	if h.SearchHist != nil {
+		h.SearchHist.Observe(time.Since(t0))
+	}
 	if err != nil {
 		slog.Error("search failed", "query", q, "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -105,6 +117,17 @@ func (h *Handler) FoodSearch(w http.ResponseWriter, r *http.Request) {
 		results[i] = toProductResponse(p)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"results": results})
+}
+
+// Metrics returns an http.HandlerFunc that emits p50/p95/p99 latency snapshots.
+func (h *Handler) Metrics(reg *metrics.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if reg == nil {
+			writeJSON(w, http.StatusOK, map[string]any{})
+			return
+		}
+		writeJSON(w, http.StatusOK, reg.Snapshot())
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

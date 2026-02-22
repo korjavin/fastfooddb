@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/analysis/analyzer/simple"
@@ -210,17 +211,21 @@ func (s *Store) Search(q string, limit int) ([]Product, error) {
 	boolQ.AddShould(prefixQ)
 
 	// Stage B – per-token fuzzy (only for tokens ≥4 chars)
+	// Boost hierarchy: phrase(10) > prefix(5) > fuzz1(2) > fuzz2(1)
 	for _, token := range strings.Fields(folded) {
 		if len(token) < 4 {
 			continue
 		}
 		fuzz := 1
+		boost := 2.0
 		if len(token) >= 8 {
 			fuzz = 2
+			boost = 1.0
 		}
 		fuzzyQ := bleve.NewFuzzyQuery(token)
 		fuzzyQ.SetField("name_folded")
 		fuzzyQ.Fuzziness = fuzz
+		fuzzyQ.SetBoost(boost)
 		boolQ.AddShould(fuzzyQ)
 	}
 
@@ -230,13 +235,30 @@ func (s *Store) Search(q string, limit int) ([]Product, error) {
 		return nil, fmt.Errorf("bleve search: %w", err)
 	}
 
-	products := make([]Product, 0, len(res.Hits))
-	for _, hit := range res.Hits {
-		p, found, err := s.Get(hit.ID)
-		if err != nil || !found {
-			continue
+	// Parallel fan-out: fetch each hit from Pebble concurrently.
+	// Indexed slots preserve Bleve score order.
+	type result struct {
+		p     Product
+		found bool
+	}
+	out := make([]result, len(res.Hits))
+	var wg sync.WaitGroup
+	wg.Add(len(res.Hits))
+	for i, hit := range res.Hits {
+		i, id := i, hit.ID
+		go func() {
+			defer wg.Done()
+			p, found, _ := s.Get(id)
+			out[i] = result{p, found}
+		}()
+	}
+	wg.Wait()
+
+	products := make([]Product, 0, len(out))
+	for _, r := range out {
+		if r.found {
+			products = append(products, r.p)
 		}
-		products = append(products, p)
 	}
 	return products, nil
 }
