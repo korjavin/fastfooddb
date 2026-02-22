@@ -1,8 +1,14 @@
 openapi: 3.0.3
 info:
   title: fastfooddb API
-  description: Blazingly fast API to get macros by bar code or food name.
+  description: |
+    Blazingly fast API to get macros by bar code or food name.
+    
+    Data provided by [Open Food Facts](https://world.openfoodfacts.org) under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
   version: 1.0.0
+  license:
+    name: Open Database License (ODbL)
+    url: https://opendatacommons.org/licenses/odbl/
 servers:
   - url: http://localhost:8080
     description: Local development server

@@ -23,6 +23,10 @@ Based on recent benchmarks, the local data serving delivers the following latenc
 | **Barcode Lookup** | < 1ms | < 1ms | < 1ms |
 | **Search (Name)** | 30ms | 100ms | 100ms |
 
+## Data License & Attribution
+
+The nutritional data is provided by [Open Food Facts](https://world.openfoodfacts.org), which is made available under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/). By using this project or its imported database, you must comply with the ODbL requirements, including properly attributing Open Food Facts in any public use of the database.
+
 ## Quick Start
 
 ```bash
