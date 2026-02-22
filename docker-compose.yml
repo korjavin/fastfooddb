@@ -8,9 +8,18 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    volumes:
+      - ./data:/app/data
+    networks:
+      - traefik_network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.fastfooddb.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.fastfooddb.tls=true"
       - "traefik.http.routers.fastfooddb.tls.certresolver=letsencrypt"
       - "traefik.http.services.fastfooddb.loadbalancer.server.port=8080"
+
+networks:
+  traefik_network:
+    name: ${NETWORK_NAME:-traefik_network}
+    external: true

@@ -38,11 +38,15 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Update deploy branch
+        env:
+          GITHUB_COMMIT_SHA: ${{ github.sha }}
+          GITHUB_REPO_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO_NAME: ${{ github.event.repository.name }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-          IMAGE="ghcr.io/korjavin/fastfooddb:${{ github.sha }}"
+          IMAGE="ghcr.io/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}:${GITHUB_COMMIT_SHA}"
 
           if git ls-remote --exit-code --heads origin deploy >/dev/null 2>&1; then
             git fetch origin deploy
@@ -62,16 +66,25 @@ jobs:
                 - "8080:8080"
               env_file:
                 - .env
+              volumes:
+                - ./data:/app/data
+              networks:
+                - traefik_network
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.fastfooddb.rule=Host(\${DOMAIN})"
                 - "traefik.http.routers.fastfooddb.tls=true"
                 - "traefik.http.routers.fastfooddb.tls.certresolver=letsencrypt"
                 - "traefik.http.services.fastfooddb.loadbalancer.server.port=8080"
+
+          networks:
+            traefik_network:
+              name: \${NETWORK_NAME:-traefik_network}
+              external: true
           EOF
 
           git add docker-compose.yml
-          git diff --cached --quiet || git commit -m "deploy: ${{ github.sha }}"
+          git diff --cached --quiet || git commit -m "deploy: ${GITHUB_COMMIT_SHA}"
           git push origin deploy
 
       - name: Trigger Portainer webhook
