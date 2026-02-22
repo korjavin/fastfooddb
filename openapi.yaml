@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: fastfooddb API
+  description: Blazingly fast API to get macros by bar code or food name.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Liveness check
+      description: Returns the service health status and manifest metadata if available.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  schema_version:
+                    type: integer
+                    example: 1
+                  build_time:
+                    type: string
+                    format: date-time
+                    example: "2026-02-22T22:57:40.193Z"
+  /metrics:
+    get:
+      summary: Performance metrics
+      description: Returns a snapshot of P50, P95, and P99 latencies for API endpoints.
+      responses:
+        '200':
+          description: Metrics snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/MetricStats'
+  /api/v1/food/barcode/{barcode}:
+    get:
+      summary: Lookup food by barcode
+      description: Returns nutritional information for a specific product using its barcode.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: barcode
+          in: path
+          required: true
+          description: The product barcode
+          schema:
+            type: string
+        - name: api_key
+          in: query
+          required: false
+          description: API key (optional if provided via X-API-Key header)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+        '401':
+          description: Unauthorized
+  /api/v1/food/search:
+    get:
+      summary: Search foods by name
+      description: Returns a list of products matching the search query.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query string
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of results (max 100)
+          default: 20
+          schema:
+            type: integer
+            maximum: 100
+        - name: api_key
+          in: query
+          required: false
+          description: API key (optional if provided via X-API-Key header)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '400':
+          description: Missing query parameter 'q'
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    Product:
+      type: object
+      properties:
+        barcode:
+          type: string
+        name:
+          type: string
+        kcal100g:
+          type: number
+          format: float
+          nullable: true
+        protein:
+          type: number
+          format: float
+          nullable: true
+        fat:
+          type: number
+          format: float
+          nullable: true
+        carbs:
+          type: number
+          format: float
+          nullable: true
+    MetricStats:
+      type: object
+      properties:
+        p50:
+          type: integer
+          description: 50th percentile latency in nanoseconds
+        p95:
+          type: integer
+          description: 95th percentile latency in nanoseconds
+        p99:
+          type: integer
+          description: 99th percentile latency in nanoseconds
+        total:
+          type: integer
+          description: Total number of observations

@@ -35,6 +35,10 @@ curl -H "X-API-Key: your-key" http://localhost:8080/api/v1/food/barcode/50001126
 curl -H "X-API-Key: your-key" "http://localhost:8080/api/v1/food/search?q=banana"
 ```
 
+## API Documentation
+
+The full API specification is available in the [openapi.yaml](openapi.yaml) file. You can view it using any OpenAPI/Swagger compatible viewer (like Swagger Editor or Postman).
+
 ## Environment Variables
 
 | Variable | Default | Description |
