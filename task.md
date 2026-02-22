@@ -1,5 +1,5 @@
 
-Open Food Facts Local Mirror Service in Go
+Open Food Facts Fast Mirror Service in Go
 Task and architecture doc
 Goal
 Build a small Go service that serves two queries fast from local storage.
@@ -49,14 +49,11 @@ Per product
 barcode string
 name string
 nutriments
-kcal per 100g and optional per serving
+kcal per 100g 
 protein g per 100g
 fat g per 100g
 carbs g per 100g
 
-optional metadata
-lang used for name
-last modified timestamp from dump if available
 
 Pebble keys and values
 Key
@@ -160,11 +157,11 @@ GET /health
 returns ok plus manifest version
 Authentication
 API key required for all endpoints except health
-Option A simplest
+
 Use Authorization header
 Authorization: ApiKey YOURKEY
-Server config has a list of allowed keys
-Option B safer storage
+
+
 Store only sha256 hashes of keys in config
 At request
 sha256 of provided key then constant time compare
@@ -270,9 +267,8 @@ Mitigation
 add a LICENSE and attribution endpoint
 document how the data is sourced and rebuilt
 Deliverables
-offimport CLI
-offserve HTTP service
+importer CLI
+fastfooddb HTTP service
 data artifact format
 runbook for import and deploy
 benchmarks and load test script
-If you want, I can also give you a concrete folder layout and Go package structure, plus the exact bleve index mapping and a small example of the importer command interface without any flags.

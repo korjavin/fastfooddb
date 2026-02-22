@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/korjavin/fastfooddb/internal/auth"
+	"github.com/korjavin/fastfooddb/internal/store"
 )
 
 // RegisterRoutes registers all HTTP routes on the given mux.
-func RegisterRoutes(mux *http.ServeMux, apiKeys []string) {
-	h := &Handler{}
+func RegisterRoutes(mux *http.ServeMux, apiKeys []string, s *store.Store, m *store.Manifest) {
+	h := &Handler{Store: s, Manifest: m}
 	protected := auth.APIKeyMiddleware(apiKeys)
 
 	// Public
