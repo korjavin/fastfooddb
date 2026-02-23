@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   app:
-    image: ghcr.io/korjavin/fastfooddb:519b69153ce43729fd6db6401bd6b9d6ff9dc5be
+    image: ghcr.io/korjavin/fastfooddb:bdc2fbd5539f1ce2f200ae51f0ea097af3585f00
     restart: unless-stopped
     ports:
       - "8080:8080"
