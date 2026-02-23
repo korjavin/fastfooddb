@@ -12,7 +12,7 @@ To achieve this without relying on heavy external database services or hitting u
 - **[Pebble](https://github.com/cockroachdb/pebble):** A fast embedded key-value store used to serve food payloads by their exact barcode instantly. The data is compressed in a highly optimized custom binary layout.
 - **[Bleve](https://github.com/blevesearch/bleve):** A text indexing library used to provide flexible, fuzzy, lightning-fast full-text searches across product names.
 
-Because of the aggressive filtering and binary packing, the **entire database size is reduced to around 1GB**. This allows the server to run locally with minimal RAM, relying heavily on the OS page cache for sub-millisecond data retrieval.
+Because of the aggressive filtering and binary packing, the **entire database size is reduced to around 750Mb**. This allows the server to run locally with minimal RAM, relying heavily on the OS page cache for sub-millisecond data retrieval.
 
 ## Performance Metrics
 
